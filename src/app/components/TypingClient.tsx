@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 import { WordsProps } from "./Typing";
 
 export default function TypingClient({ words }: { words: WordsProps[] }) {
@@ -14,7 +14,7 @@ export default function TypingClient({ words }: { words: WordsProps[] }) {
   const [totalChars, setTotalChars] = useState<number>(0);
   const [selectedTab, setSelectedTab] = useState<string>("text_short");
 
-  console.log(words);
+  const charDisplayRef = useRef<HTMLDivElement>(null);
 
   const generateWords = useCallback((): string => {
     if (words.length === 0) return "";
@@ -25,7 +25,7 @@ export default function TypingClient({ words }: { words: WordsProps[] }) {
     } else {
       return words.map((word) => word.text_long).join(" ");
     }
-  }, [selectedTab]);
+  }, [words, selectedTab]);
 
   const resetTest = useCallback(() => {
     setCurrentWords(generateWords());
@@ -42,6 +42,21 @@ export default function TypingClient({ words }: { words: WordsProps[] }) {
   useEffect(() => {
     resetTest();
   }, [resetTest, selectedTab]);
+
+  // scroll down gradually just enough to keep the current typing position in view in small screens.
+  useEffect(() => {
+    if (charDisplayRef.current) {
+      const currentCharElement = charDisplayRef.current.querySelector(
+        `span:nth-child(${userInput.length + 100})`
+      );
+      if (currentCharElement) {
+        currentCharElement.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
+      }
+    }
+  }, [userInput]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
@@ -88,13 +103,14 @@ export default function TypingClient({ words }: { words: WordsProps[] }) {
       setIsActive(true);
     }
   };
+
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-8">
       <div className="max-w-3xl mx-auto">
         {/* Top Bar */}
-        <div className="mb-8 flex justify-between items-center">
+        <div className="mb-8 flex flex-col justify-between sm:flex-row sm:items-center">
           <h1 className="text-2xl font-bold text-green-500">Chan's Typing</h1>
-          <div className="flex gap-4">
+          <div className="flex gap-4 flex-col mt-4 sm:mt-0 sm:flex-row flex-wrap">
             <div className="text-xl">
               <span className="text-gray-400">WPM: </span>
               <span className="text-green-500">{wpm}</span>
@@ -137,7 +153,10 @@ export default function TypingClient({ words }: { words: WordsProps[] }) {
         </div>
 
         {/* A box to display text */}
-        <div className="mb-6 p-4 bg-gray-800 rounded-lg font-mono text-lg leading-relaxed">
+        <div
+          ref={charDisplayRef}
+          className="mb-6 p-4 bg-gray-800 rounded-lg font-mono text-lg leading-relaxed overflow-auto max-h-40"
+        >
           {currentWords.split("").map((char, index) => {
             let color = "text-gray-400";
             if (index < userInput.length) {
