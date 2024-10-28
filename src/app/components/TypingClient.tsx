@@ -46,6 +46,7 @@ export default function TypingClient({ words }: { words: WordsProps[] }) {
   // scroll down gradually just enough to keep the current typing position in view in small screens.
   useEffect(() => {
     if (charDisplayRef.current) {
+      // 100th character ahead of the current typing position to scroll down
       const currentCharElement = charDisplayRef.current.querySelector(
         `span:nth-child(${userInput.length + 100})`
       );
